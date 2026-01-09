@@ -6,6 +6,10 @@
     <title>ASHTE BANK ULTIMATE v22.0 TOTAL REVIVAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <style>
         :root { --ashte: #08a652; }
         body { font-family: 'Manrope', sans-serif; background: #000; margin: 0; height: 100vh; overflow: hidden; display: flex; justify-content: center; }
@@ -90,6 +94,14 @@
                 </div>
             </div>
 
+            <div class="bg-white p-6 rounded-[35px] border border-blue-100 mb-6 shadow-sm">
+                <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Федеральная Казна</p>
+                <div class="flex gap-2">
+                    <input type="number" id="user-treasury-sum" placeholder="Сумма пополнения" class="input-st !mb-0 !p-3 flex-1">
+                    <button onclick="depositToTreasury()" class="bg-blue-600 text-white px-5 rounded-2xl font-black text-[9px] uppercase">Внести</button>
+                </div>
+            </div>
+
             <div class="grid grid-cols-2 gap-4 mb-8">
                 <div onclick="nav('scr-transfer')" class="bg-white p-5 rounded-[30px] border shadow-sm text-center active:scale-95 transition-transform">
                     <span class="text-2xl">💸</span>
@@ -167,6 +179,12 @@
         <button onclick="nav('scr-main')" class="mb-6 font-black text-red-600 text-[10px] uppercase">← Покинуть Терминал</button>
         <h2 class="text-2xl font-black text-red-700 mb-8 italic uppercase text-center tracking-widest">Ядро Системы</h2>
         
+        <div class="bg-white p-5 rounded-3xl border-2 border-blue-300 mb-6">
+            <p class="text-[10px] font-black text-blue-600 mb-2 uppercase italic">Федеральная Казна: <span id="adm-treasury-bal" class="text-blue-800">0</span> ₮</p>
+            <input type="number" id="adm-treasury-withdraw" placeholder="Сумма снятия" class="input-st !mb-3">
+            <button onclick="withdrawFromTreasury()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[9px] uppercase">Снять на мой баланс</button>
+        </div>
+
         <div class="bg-white p-5 rounded-3xl border-2 border-red-200 mb-6">
             <p class="text-[10px] font-black text-red-500 mb-2 uppercase italic">Финансовый Контроль</p>
             <input type="tel" id="adm-target" placeholder="Телефон юзера" class="input-st !mb-2">
@@ -220,38 +238,50 @@
         </div>
         <div id="history-content" class="flex-1 overflow-y-auto p-4"></div>
     </div>
-
 </div>
 
 <script>
-    const DB_URL = "https://tugox-add81-default-rtdb.firebaseio.com/";
+    // КОНФИГУРАЦИЯ FIREBASE
+    const firebaseConfig = {
+        databaseURL: "https://tugox-add81-default-rtdb.firebaseio.com/"
+    };
     
-    let db = { users: {}, history: [], news: [], cities: { "Мечта": 0, "Кинь": 0, "Калин": 0, "Новоградск": 0 }, cityWallets: {} };
+    // Инициализация
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let db = { users: {}, history: [], news: [], cities: { "Мечта": 0, "Кинь": 0, "Калин": 0, "Новоградск": 0 }, cityWallets: {}, treasury: 0 };
     let session = localStorage.getItem('ashte_session_v22');
 
-    async function syncRead() {
-        try {
-            const res = await fetch(`${DB_URL}.json`);
-            const data = await res.json();
-            if(data) {
+    // СИНХРОНИЗАЦИЯ ЧЕРЕЗ FIREBASE SDK (В реальном времени)
+    function startSync() {
+        database.ref('/').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
                 db = data;
                 if(!db.users) db.users = {};
                 if(!db.cities) db.cities = { "Мечта": 0, "Кинь": 0, "Калин": 0, "Новоградск": 0 };
                 if(!db.history) db.history = [];
                 if(!db.news) db.news = [];
                 if(!db.cityWallets) db.cityWallets = {};
+                if(!db.treasury) db.treasury = 0;
+                
                 updateUI();
                 refreshActiveScreens();
+                
+                // Авто-вход если сессия жива
+                if(session && db.users[session] && isActive('scr-login')) {
+                    nav('scr-main');
+                }
             } else {
-                await syncWrite();
+                // Если база пуста, инициализируем ее
+                syncWrite();
             }
-        } catch(e) { console.error("Sync read error", e); }
+        });
     }
 
-    async function syncWrite() {
-        try {
-            await fetch(`${DB_URL}.json`, { method: 'PUT', body: JSON.stringify(db) });
-        } catch(e) { console.error("Sync write error", e); }
+    function syncWrite() {
+        database.ref('/').set(db).catch(e => console.error("Write error", e));
     }
 
     function refreshActiveScreens() {
@@ -280,8 +310,39 @@
             document.getElementById('ui-admin-btn').classList.add('hidden');
             document.getElementById('admin-news-box').classList.add('hidden');
         }
+        
+        if(document.getElementById('adm-treasury-bal')) {
+            document.getElementById('adm-treasury-bal').innerText = Math.floor(db.treasury).toLocaleString();
+        }
+
         document.body.classList.toggle('dark-mode', !!u.dark);
         document.getElementById('theme-toggle').checked = !!u.dark;
+    }
+
+    // ЛОГИКА КАЗНЫ
+    function depositToTreasury() {
+        const sumInput = document.getElementById('user-treasury-sum');
+        const sum = parseFloat(sumInput.value);
+        const u = db.users[session];
+        if(sum > 0 && u.balance >= sum) {
+            u.balance -= sum;
+            db.treasury = (db.treasury || 0) + sum;
+            syncWrite();
+            sumInput.value = '';
+            push("Взнос в казну принят!");
+        } else alert("Недостаточно средств или неверная сумма");
+    }
+
+    function withdrawFromTreasury() {
+        const sumInput = document.getElementById('adm-treasury-withdraw');
+        const sum = parseFloat(sumInput.value);
+        if(sum > 0 && db.treasury >= sum) {
+            db.treasury -= sum;
+            db.users[session].balance += sum;
+            syncWrite();
+            sumInput.value = '';
+            push("₮ выведены из казны на ваш счет");
+        } else alert("В казне нет такой суммы");
     }
 
     function login() {
@@ -299,7 +360,6 @@
         if(!p || !f || !pw) return alert("Заполни все поля!");
         if(db.users[p]) return alert("Такой номер уже есть!");
         const card = Math.floor(1000000000 + Math.random() * 8999999999).toString();
-        // ВЫДАЧА ТЕПЕРЬ 0 ТИГ
         db.users[p] = { 
             fio: f, pass: pw, balance: 0, savings: 0, 
             status: 'Клиент', role: 'Гражданин', avatar: '👤', 
@@ -332,7 +392,7 @@
         if(dir === 'in' && s <= u.balance) { u.balance -= s; u.savings = (u.savings || 0) + s; }
         else if(dir === 'out' && s <= (u.savings || 0)) { u.savings -= s; u.balance += s; }
         else return alert("Недостаточно средств");
-        syncWrite(); updateUI(); push("Сейф обновлен");
+        syncWrite(); push("Сейф обновлен");
     }
 
     function publishNews() {
@@ -344,7 +404,7 @@
             reactions: {"🔥":0, "🚀":0, "❤️":0} 
         });
         document.getElementById('news-text').value = ''; 
-        syncWrite(); renderNews(); push("Опубликовано!");
+        syncWrite(); push("Опубликовано!");
     }
 
     function renderNews() {
@@ -366,7 +426,7 @@
         if(n) { 
             if(!n.reactions) n.reactions = {"🔥":0,"🚀":0,"❤️":0}; 
             n.reactions[em]++; 
-            syncWrite(); renderNews(); 
+            syncWrite(); 
         }
     }
 
@@ -388,7 +448,7 @@
         if(s > 0 && db.users[session].balance >= s) {
             db.users[session].balance -= s; db.cities[name] += s;
             db.history.unshift({ from: db.users[session].fio, to: `Фонд ${name}`, sum: s, date: new Date().toLocaleString() });
-            syncWrite(); updateUI(); renderCities(); push("Спасибо!");
+            syncWrite(); push("Спасибо!");
         }
     }
 
@@ -428,7 +488,7 @@
         const t = document.getElementById('adm-target').value, s = parseFloat(document.getElementById('adm-sum').value);
         if(db.users[t] && !isNaN(s)) {
             if(type === 'add') db.users[t][field] += s; else db.users[t][field] -= s;
-            syncWrite(); push("Данные изменены"); renderAdmin();
+            syncWrite(); push("Данные изменены");
         }
     }
 
@@ -438,7 +498,7 @@
         let target = Object.keys(db.users).find(p => db.users[p].card === card);
         if(target && db.cities[name] > 0) {
             db.users[target].balance += db.cities[name];
-            db.cities[name] = 0; syncWrite(); renderAdmin(); push("Выплачено!");
+            db.cities[name] = 0; syncWrite(); push("Выплачено!");
         }
     }
 
@@ -466,17 +526,18 @@
         setTimeout(() => p.classList.remove('show'), 3000); 
     }
 
-    function toggleTheme() { db.users[session].dark = !db.users[session].dark; syncWrite(); updateUI(); }
+    function toggleTheme() { db.users[session].dark = !db.users[session].dark; syncWrite(); }
     function copyCard() { navigator.clipboard.writeText(db.users[session].card); push("Копировано!"); }
-    function changeAvatar() { const a = prompt("Emoji:"); if(a) { db.users[session].avatar = a; syncWrite(); updateUI(); } }
+    function changeAvatar() { const a = prompt("Emoji:"); if(a) { db.users[session].avatar = a; syncWrite(); } }
     function logout() { localStorage.clear(); location.reload(); }
     function isActive(id) { return document.getElementById(id).classList.contains('active'); }
     function assignRole(p) { db.users[p].role = document.getElementById(`role-${p}`).value; syncWrite(); push("Готово!"); }
-    function admDeleteUser(p) { if(confirm("Удалить?")) { delete db.users[p]; syncWrite(); renderAdmin(); } }
-    function buyStatus(st, price) { if(db.users[session].balance >= price) { db.users[session].balance -= price; db.users[session].status = st; syncWrite(); updateUI(); push("Куплено!"); } else alert("Мало ₮"); }
+    function admDeleteUser(p) { if(confirm("Удалить?")) { delete db.users[p]; syncWrite(); } }
+    function buyStatus(st, price) { if(db.users[session].balance >= price) { db.users[session].balance -= price; db.users[session].status = st; syncWrite(); push("Куплено!"); } else alert("Мало ₮"); }
     function dbExport() { const blob = new Blob([JSON.stringify(db)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup.json`; a.click(); }
-    function dbWipe() { if(confirm("СТЕРЕТЬ ВСЁ?")) { db = { users: {}, history: [], news: [], cities: { "Мечта": 0, "Кинь": 0, "Калин": 0, "Новоградск": 0 } }; syncWrite(); location.reload(); } }
+    function dbWipe() { if(confirm("СТЕРЕТЬ ВСЁ?")) { db = { users: {}, history: [], news: [], cities: { "Мечта": 0, "Кинь": 0, "Калин": 0, "Новоградск": 0 }, treasury: 0 }; syncWrite(); location.reload(); } }
 
+    // Начисление процентов (раз в минуту)
     setInterval(() => {
         let changed = false;
         for(let u in db.users) { 
@@ -485,14 +546,12 @@
                 changed = true; 
             } 
         }
-        if(changed) { syncWrite(); updateUI(); }
+        if(changed) { syncWrite(); }
     }, 60000);
 
-    setInterval(syncRead, 10000);
-
-    window.onload = async () => { 
-        await syncRead(); 
-        if(session && db.users[session]) nav('scr-main'); 
+    // Запуск приложения
+    window.onload = () => { 
+        startSync(); 
     };
 </script>
 </body>
