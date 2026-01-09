@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ASHTE BANK ULTIMATE v22.0 TOTAL REVIVAL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --ashte: #08a652; }
+        body { font-family: 'Manrope', sans-serif; background: #000; margin: 0; height: 100vh; overflow: hidden; display: flex; justify-content: center; }
+        .app-container { width: 100%; max-width: 414px; height: 100%; background: #f8fafc; position: relative; overflow: hidden; }
+        .screen { position: absolute; inset: 0; background: inherit; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(100%); z-index: 10; display: flex; flex-direction: column; visibility: hidden; }
+        .screen.active { transform: translateX(0); z-index: 20; visibility: visible; }
+        
+        body.dark-mode .app-container { background: #0f172a !important; color: white !important; }
+        body.dark-mode .bg-white { background: #1e293b !important; color: white !important; border-color: #334155 !important; }
+        body.dark-mode .text-slate-800, body.dark-mode .text-slate-400 { color: #f1f5f9 !important; }
+        body.dark-mode .input-st { background: #0f172a; border-color: #334155; color: white; }
+        body.dark-mode .nav-bar { background: #1e293b; border-top-color: #000; }
+
+        .btn-main { background: var(--ashte); color: #fff !important; padding: 18px; border-radius: 22px; font-weight: 800; width: 100%; border: none; font-size: 13px; text-transform: uppercase; cursor: pointer; transition: 0.2s; }
+        .btn-main:active { transform: scale(0.96); }
+        .input-st { background: white; border: 2px solid #e2e8f0; padding: 16px; border-radius: 20px; width: 100%; outline: none; margin-bottom: 12px; color: #000; font-weight: 600; }
+        .card-vip { background: linear-gradient(135deg, #1e293b 0%, #000 100%); border-radius: 28px; padding: 25px; color: white; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4); position: relative; overflow: hidden; }
+        
+        #push { position: absolute; top: -150px; left: 15px; right: 15px; background: white; padding: 20px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); z-index: 1000; transition: 0.5s; border-left: 8px solid var(--ashte); color: #000; }
+        #push.show { top: 20px; }
+        .nav-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 75px; background: white; border-top: 1px solid #eee; display: flex; justify-content: space-around; align-items: center; z-index: 50; }
+        .react-btn { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 12px; font-weight: 800; font-size: 12px; display: flex; align-items: center; gap: 4px; color: #000 !important; }
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="main-wrapper">
+    <div id="push">
+        <p id="push-title" class="text-[10px] font-black text-emerald-600 uppercase mb-1">BANK NOTICE</p>
+        <p id="push-msg" class="text-sm font-bold"></p>
+    </div>
+
+    <div id="scr-login" class="screen p-8 justify-center active">
+        <div class="text-center mb-10">
+            <div class="w-20 h-20 bg-emerald-600 rounded-[30px] mx-auto flex items-center justify-center shadow-xl mb-4 text-white text-4xl font-black italic">A</div>
+            <h1 class="text-3xl font-black text-slate-900 tracking-tighter uppercase">Ashte <span class="text-emerald-600">Bank</span></h1>
+            <p class="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Ultimate Edition v22.0</p>
+        </div>
+        <input type="tel" id="l-phone" placeholder="Номер телефона" class="input-st">
+        <input type="password" id="l-pass" placeholder="Пароль" class="input-st">
+        <button onclick="login()" class="btn-main shadow-lg shadow-emerald-900/20">Войти в систему</button>
+        <button onclick="nav('scr-reg')" class="w-full text-slate-400 font-black text-[10px] py-6 uppercase tracking-tighter">Создать новый аккаунт</button>
+    </div>
+
+    <div id="scr-reg" class="screen p-8 overflow-y-auto">
+        <button onclick="nav('scr-login')" class="mb-8 font-black text-emerald-600 text-xs uppercase italic">← Вернуться</button>
+        <h2 class="text-3xl font-black mb-8 italic uppercase">Регистрация</h2>
+        <input type="text" id="r-fio" placeholder="ФИО полностью" class="input-st">
+        <input type="tel" id="r-phone" placeholder="Телефон" class="input-st">
+        <input type="password" id="r-pass" placeholder="Придумайте пароль" class="input-st">
+        <button onclick="register()" class="btn-main">Открыть банковский счет</button>
+    </div>
+
+    <div id="scr-main" class="screen !p-0">
+        <div class="p-6 bg-white border-b flex justify-between items-center z-30 shadow-sm">
+            <div class="flex items-center gap-4">
+                <div id="ui-avatar" onclick="changeAvatar()" class="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-2xl cursor-pointer shadow-inner">👤</div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <p id="ui-fio" class="font-black text-slate-800 text-sm truncate max-w-[110px]">Загрузка...</p>
+                        <span id="ui-role" class="text-[8px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-black uppercase italic">Житель</span>
+                    </div>
+                    <span id="ui-status" class="text-[9px] font-black text-emerald-600 uppercase bg-emerald-50 px-2 py-0.5 rounded-md">Клиент</span>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="nav('scr-admin')" id="ui-admin-btn" class="hidden w-11 h-11 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-lg">💀</button>
+                <button onclick="nav('scr-city')" class="w-11 h-11 bg-emerald-100 rounded-2xl flex items-center justify-center text-xl">🏗️</button>
+            </div>
+        </div>
+        
+        <div class="p-6 flex-1 overflow-y-auto pb-32">
+            <div class="card-vip mb-8">
+                <div class="flex justify-between items-start mb-8">
+                    <p class="text-[10px] font-black uppercase opacity-60 italic">Ashte World Premium</p>
+                    <div class="w-8 h-5 bg-yellow-500/20 rounded-md border border-yellow-500/30"></div>
+                </div>
+                <h2 id="ui-balance" class="text-4xl font-black mb-4 tracking-tighter">0 ₮</h2>
+                <div class="flex justify-between items-center bg-white/10 p-3 rounded-2xl border border-white/5 backdrop-blur-md">
+                    <p id="ui-card" class="font-mono text-sm tracking-[2px]">0000 0000 00</p>
+                    <button onclick="copyCard()" class="text-[9px] bg-emerald-600 px-3 py-1.5 rounded-xl font-black uppercase text-white active:scale-90 transition">COPY</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <div onclick="nav('scr-transfer')" class="bg-white p-5 rounded-[30px] border shadow-sm text-center active:scale-95 transition-transform">
+                    <span class="text-2xl">💸</span>
+                    <p class="text-[9px] font-black uppercase mt-2">Перевести</p>
+                </div>
+                <div onclick="nav('scr-history')" class="bg-white p-5 rounded-[30px] border shadow-sm text-center active:scale-95 transition-transform">
+                    <span class="text-2xl">📜</span>
+                    <p class="text-[9px] font-black uppercase mt-2">История</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-[35px] border border-slate-100 mb-6 shadow-sm">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Сейф (+1% / 5ч)</p>
+                        <h3 id="ui-savings" class="text-2xl font-black text-emerald-600">0.00 ₮</h3>
+                    </div>
+                    <div class="text-3xl">🏦</div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="modSavings('in')" class="flex-1 bg-emerald-600 text-white py-4 rounded-2xl font-black text-[9px] uppercase">Внести</button>
+                    <button onclick="modSavings('out')" class="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-black text-[9px] uppercase">Снять</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-bar">
+            <button onclick="nav('scr-main')" class="text-2xl">🏠</button>
+            <button onclick="nav('scr-news')" class="text-2xl opacity-40">📢</button>
+            <button onclick="nav('scr-market')" class="text-2xl opacity-40">🛍️</button>
+            <button onclick="nav('scr-settings')" class="text-2xl opacity-40">⚙️</button>
+        </div>
+    </div>
+
+    <div id="scr-news" class="screen bg-slate-50">
+        <div class="p-6 bg-white border-b flex items-center justify-between">
+            <h2 class="text-xl font-black italic uppercase">Новости</h2>
+            <button onclick="nav('scr-main')" class="text-slate-400 font-black text-2xl">×</button>
+        </div>
+        <div class="p-4 flex-1 overflow-y-auto pb-24" id="news-container"></div>
+        <div id="admin-news-box" class="hidden p-4 bg-white border-t">
+            <textarea id="news-text" placeholder="Текст новости..." class="input-st h-20 resize-none mb-2"></textarea>
+            <button onclick="publishNews()" class="btn-main">Опубликовать</button>
+        </div>
+    </div>
+
+    <div id="scr-city" class="screen p-8 overflow-y-auto">
+        <button onclick="nav('scr-main')" class="mb-8 font-black text-emerald-600 uppercase text-[10px]">← Главная</button>
+        <h2 class="text-3xl font-black mb-8 italic uppercase tracking-tighter">Фонды Городов</h2>
+        <div id="city-list" class="space-y-4"></div>
+    </div>
+
+    <div id="scr-market" class="screen p-8 overflow-y-auto">
+        <button onclick="nav('scr-main')" class="mb-8 font-black text-emerald-600 uppercase text-[10px]">← Назад</button>
+        <h2 class="text-3xl font-black mb-8 italic uppercase">Магазин статусов</h2>
+        <div class="space-y-4">
+            <div class="bg-white p-6 rounded-[30px] border flex justify-between items-center shadow-sm">
+                <div>
+                    <h4 class="font-black text-emerald-600 italic">VIP</h4>
+                    <p class="text-[9px] text-slate-400 font-bold uppercase">Лимит повышен • 20,000 ₮</p>
+                </div>
+                <button onclick="buyStatus('VIP', 20000)" class="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-black text-[10px]">КУПИТЬ</button>
+            </div>
+            <div class="bg-slate-900 p-6 rounded-[30px] text-white flex justify-between items-center shadow-xl">
+                <div>
+                    <h4 class="font-black text-yellow-400 italic">PREMIUM</h4>
+                    <p class="text-[9px] opacity-60 font-bold uppercase">Безлимит • 100,000 ₮</p>
+                </div>
+                <button onclick="buyStatus('PREMIUM', 100000)" class="bg-yellow-400 text-black px-6 py-3 rounded-2xl font-black text-[10px]">КУПИТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="scr-admin" class="screen p-8 overflow-y-auto bg-red-50">
+        <button onclick="nav('scr-main')" class="mb-6 font-black text-red-600 text-[10px] uppercase">← Покинуть Терминал</button>
+        <h2 class="text-2xl font-black text-red-700 mb-8 italic uppercase text-center tracking-widest">Ядро Системы</h2>
+        
+        <div class="bg-white p-5 rounded-3xl border-2 border-red-200 mb-6">
+            <p class="text-[10px] font-black text-red-500 mb-2 uppercase italic">Финансовый Контроль</p>
+            <input type="tel" id="adm-target" placeholder="Телефон юзера" class="input-st !mb-2">
+            <input type="number" id="adm-sum" placeholder="Сумма (₮)" class="input-st !mb-4">
+            <div class="grid grid-cols-2 gap-2 mb-2">
+                <button onclick="admAction('add', 'balance')" class="bg-emerald-500 text-white py-3 rounded-xl font-black text-[8px]">БАЛАНС +</button>
+                <button onclick="admAction('sub', 'balance')" class="bg-red-500 text-white py-3 rounded-xl font-black text-[8px]">БАЛАНС -</button>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="admAction('add', 'savings')" class="bg-emerald-800 text-white py-3 rounded-xl font-black text-[8px]">СЕЙФ +</button>
+                <button onclick="admAction('sub', 'savings')" class="bg-red-800 text-white py-3 rounded-xl font-black text-[8px]">СЕЙФ -</button>
+            </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-3xl border-2 border-red-200 mb-6">
+            <p class="text-[10px] font-black text-red-500 mb-4 uppercase">Бюджеты Городов</p>
+            <div id="adm-city-control" class="space-y-4"></div>
+        </div>
+
+        <p class="text-[10px] font-black text-slate-400 uppercase mb-3 italic">Список всех карт:</p>
+        <div id="adm-user-list" class="space-y-3 pb-20"></div>
+
+        <div class="space-y-2 mt-10">
+            <button onclick="dbExport()" class="w-full bg-slate-800 text-white py-4 rounded-2xl font-black text-[10px] uppercase">Экспорт Базы (.json)</button>
+            <button onclick="dbWipe()" class="w-full bg-red-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest">ПОЛНЫЙ ВАЙП</button>
+        </div>
+    </div>
+
+    <div id="scr-settings" class="screen p-8">
+        <button onclick="nav('scr-main')" class="mb-8 font-black text-emerald-600 uppercase text-[10px]">← Назад</button>
+        <h2 class="text-3xl font-black mb-8 italic uppercase">Опции</h2>
+        <div class="bg-white p-6 rounded-[30px] border mb-4 flex justify-between items-center shadow-sm">
+            <p class="font-bold text-sm">Темная тема (Dark Mode)</p>
+            <input type="checkbox" id="theme-toggle" onchange="toggleTheme()" class="w-6 h-6 accent-emerald-600">
+        </div>
+        <button onclick="logout()" class="w-full text-red-500 font-black text-[10px] uppercase py-5 bg-red-50 rounded-2xl">Выход из аккаунта</button>
+    </div>
+
+    <div id="scr-transfer" class="screen p-8">
+        <button onclick="nav('scr-main')" class="mb-8 font-black text-emerald-600 uppercase text-[10px]">← Отмена</button>
+        <h2 class="text-3xl font-black mb-8 italic uppercase text-center">Перевод</h2>
+        <input type="tel" id="tr-card" placeholder="Карта получателя" class="input-st">
+        <input type="number" id="tr-sum" placeholder="Сумма в ₮" class="input-st text-2xl font-black py-6">
+        <button onclick="processTransfer()" class="btn-main shadow-xl">Подтвердить</button>
+    </div>
+
+    <div id="scr-history" class="screen">
+        <div class="p-6 bg-white border-b flex items-center justify-between">
+            <h2 class="text-sm font-black uppercase italic">История операций</h2>
+            <button onclick="nav('scr-main')" class="text-xl">×</button>
+        </div>
+        <div id="history-content" class="flex-1 overflow-y-auto p-4"></div>
+    </div>
+
+</div>
+
+<script>
+    const DB_URL = "https://tugox-add81-default-rtdb.firebaseio.com/";
+    
+    let db = { users: {}, history: [], news: [], cities: { "Мечта": 0, "Кинь": 0, "Калин": 0, "Новоградск": 0 }, cityWallets: {} };
+    let session = localStorage.getItem('ashte_session_v22');
+
+    async function syncRead() {
+        try {
+            const res = await fetch(`${DB_URL}.json`);
+            const data = await res.json();
+            if(data) {
+                db = data;
+                if(!db.users) db.users = {};
+                if(!db.cities) db.cities = { "Мечта": 0, "Кинь": 0, "Калин": 0, "Новоградск": 0 };
+                if(!db.history) db.history = [];
+                if(!db.news) db.news = [];
+                if(!db.cityWallets) db.cityWallets = {};
+                updateUI();
+                refreshActiveScreens();
+            } else {
+                await syncWrite();
+            }
+        } catch(e) { console.error("Sync read error", e); }
+    }
+
+    async function syncWrite() {
+        try {
+            await fetch(`${DB_URL}.json`, { method: 'PUT', body: JSON.stringify(db) });
+        } catch(e) { console.error("Sync write error", e); }
+    }
+
+    function refreshActiveScreens() {
+        if(isActive('scr-news')) renderNews();
+        if(isActive('scr-city')) renderCities();
+        if(isActive('scr-history')) renderHistory();
+        if(isActive('scr-admin')) renderAdmin();
+    }
+
+    function updateUI() {
+        if(!session || !db.users[session]) return;
+        const u = db.users[session];
+        document.getElementById('ui-fio').innerText = u.fio;
+        document.getElementById('ui-avatar').innerText = u.avatar || '👤';
+        document.getElementById('ui-balance').innerText = Math.floor(u.balance).toLocaleString() + ' ₮';
+        document.getElementById('ui-savings').innerText = (u.savings || 0).toFixed(2) + ' ₮';
+        document.getElementById('ui-card').innerText = u.card.replace(/(\d{4})(\d{4})(\d{2})/, '$1 $2 $3');
+        document.getElementById('ui-status').innerText = u.status;
+        document.getElementById('ui-role').innerText = u.role || 'Гражданин';
+        
+        const isMaster = u.admin || u.fio.includes("Тимур") || session === "+79591966720";
+        if(isMaster) {
+            document.getElementById('ui-admin-btn').classList.remove('hidden');
+            document.getElementById('admin-news-box').classList.remove('hidden');
+        } else {
+            document.getElementById('ui-admin-btn').classList.add('hidden');
+            document.getElementById('admin-news-box').classList.add('hidden');
+        }
+        document.body.classList.toggle('dark-mode', !!u.dark);
+        document.getElementById('theme-toggle').checked = !!u.dark;
+    }
+
+    function login() {
+        const p = document.getElementById('l-phone').value, pw = document.getElementById('l-pass').value;
+        if(db.users[p] && db.users[p].pass === pw) { 
+            session = p; 
+            localStorage.setItem('ashte_session_v22', p); 
+            push("Авторизация успешна!"); 
+            nav('scr-main'); 
+        } else alert("Неверный логин или пароль!");
+    }
+
+    function register() {
+        const p = document.getElementById('r-phone').value, f = document.getElementById('r-fio').value, pw = document.getElementById('r-pass').value;
+        if(!p || !f || !pw) return alert("Заполни все поля!");
+        if(db.users[p]) return alert("Такой номер уже есть!");
+        const card = Math.floor(1000000000 + Math.random() * 8999999999).toString();
+        // ВЫДАЧА ТЕПЕРЬ 0 ТИГ
+        db.users[p] = { 
+            fio: f, pass: pw, balance: 0, savings: 0, 
+            status: 'Клиент', role: 'Гражданин', avatar: '👤', 
+            card: card, dark: false, admin: (f.includes("Тимур") || p === "+79591966720") 
+        };
+        syncWrite(); push("Счет успешно открыт!"); nav('scr-login');
+    }
+
+    function processTransfer() {
+        const c = document.getElementById('tr-card').value.replace(/\s/g, ''), s = parseFloat(document.getElementById('tr-sum').value);
+        let target = null;
+        for(let u in db.users) if(db.users[u].card === c) target = u;
+        
+        if(target && target !== session && db.users[session].balance >= s && s > 0) {
+            db.users[session].balance -= s; 
+            db.users[target].balance += s;
+            db.history.unshift({ 
+                from: db.users[session].fio, 
+                to: db.users[target].fio, 
+                sum: s, 
+                date: new Date().toLocaleString() 
+            });
+            syncWrite(); push("₮ Отправлены!"); nav('scr-main');
+        } else alert("Ошибка! Проверьте данные.");
+    }
+
+    function modSavings(dir) {
+        const s = parseFloat(prompt("Сумма:")); if(!s || s <= 0) return;
+        const u = db.users[session];
+        if(dir === 'in' && s <= u.balance) { u.balance -= s; u.savings = (u.savings || 0) + s; }
+        else if(dir === 'out' && s <= (u.savings || 0)) { u.savings -= s; u.balance += s; }
+        else return alert("Недостаточно средств");
+        syncWrite(); updateUI(); push("Сейф обновлен");
+    }
+
+    function publishNews() {
+        const t = document.getElementById('news-text').value; if(!t) return;
+        db.news.unshift({ 
+            id: Date.now(), text: t, 
+            author: db.users[session].fio, 
+            date: new Date().toLocaleDateString(), 
+            reactions: {"🔥":0, "🚀":0, "❤️":0} 
+        });
+        document.getElementById('news-text').value = ''; 
+        syncWrite(); renderNews(); push("Опубликовано!");
+    }
+
+    function renderNews() {
+        const cont = document.getElementById('news-container');
+        if(!cont) return;
+        cont.innerHTML = db.news.map(n => `
+            <div class="bg-white p-5 rounded-[28px] border mb-4 shadow-sm">
+                <p class="text-[9px] font-black text-emerald-600 mb-2 uppercase italic">${n.author || 'ASHTE OFFICIAL'} • ${n.date}</p>
+                <p class="text-sm font-bold text-slate-700 mb-4 leading-relaxed">${n.text}</p>
+                <div class="flex gap-2">${Object.entries(n.reactions || {"🔥":0,"🚀":0,"❤️":0}).map(([emoji, count]) => `
+                    <button onclick="react(${n.id}, '${emoji}')" class="react-btn"><span>${emoji}</span><b>${count}</b></button>
+                `).join('')}</div>
+            </div>
+        `).join('');
+    }
+
+    function react(id, em) {
+        const n = db.news.find(x => x.id === id);
+        if(n) { 
+            if(!n.reactions) n.reactions = {"🔥":0,"🚀":0,"❤️":0}; 
+            n.reactions[em]++; 
+            syncWrite(); renderNews(); 
+        }
+    }
+
+    function renderCities() {
+        const cont = document.getElementById('city-list');
+        if(!cont) return;
+        cont.innerHTML = Object.entries(db.cities).map(([name, sum]) => `
+            <div class="bg-white p-6 rounded-[30px] border shadow-sm">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-black italic">${name}</h3>
+                    <span class="text-emerald-600 font-bold bg-emerald-50 px-3 py-1 rounded-lg">${Math.floor(sum).toLocaleString()} ₮</span>
+                </div>
+                <button onclick="donateCity('${name}')" class="w-full bg-slate-900 text-white py-3 rounded-2xl font-black text-[10px] uppercase">Пожертвовать</button>
+            </div>`).join('');
+    }
+
+    function donateCity(name) {
+        const s = parseFloat(prompt("Сумма пожертвования:"));
+        if(s > 0 && db.users[session].balance >= s) {
+            db.users[session].balance -= s; db.cities[name] += s;
+            db.history.unshift({ from: db.users[session].fio, to: `Фонд ${name}`, sum: s, date: new Date().toLocaleString() });
+            syncWrite(); updateUI(); renderCities(); push("Спасибо!");
+        }
+    }
+
+    function renderAdmin() {
+        const cityCtrl = document.getElementById('adm-city-control');
+        const userList = document.getElementById('adm-user-list');
+        if(!cityCtrl || !userList) return;
+
+        cityCtrl.innerHTML = Object.entries(db.cities).map(([name, sum]) => `
+            <div class="p-3 border rounded-2xl bg-white flex flex-col gap-2">
+                <p class="font-black text-[10px] uppercase">${name}: ${Math.floor(sum)} ₮</p>
+                <input id="cw-${name}" value="${db.cityWallets[name] || ''}" placeholder="Карта мэра" class="input-st !p-2 !text-[10px] !mb-0">
+                <button onclick="withdrawCity('${name}')" class="bg-red-600 text-white py-2 rounded-xl text-[9px] font-black uppercase">Вывести Мэру</button>
+            </div>`).join('');
+
+        userList.innerHTML = Object.keys(db.users).map(p => {
+            const u = db.users[p];
+            return `<div class="bg-white p-4 rounded-2xl border mb-2 shadow-sm">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-black text-[11px] uppercase">${u.fio}</p>
+                        <p class="text-[9px] font-mono text-emerald-600 font-bold">${u.card}</p>
+                        <p class="text-[8px] opacity-40 italic">${p}</p>
+                    </div>
+                    <p class="text-[10px] font-black">${Math.floor(u.balance)} ₮</p>
+                </div>
+                <div class="flex gap-1 mt-2">
+                    <input id="role-${p}" value="${u.role || ''}" placeholder="Роль" class="input-st !p-2 !mb-0 !text-[9px] flex-1">
+                    <button onclick="assignRole('${p}')" class="bg-blue-600 text-white px-3 rounded-lg text-[9px] font-black">OK</button>
+                    <button onclick="admDeleteUser('${p}')" class="bg-red-100 text-red-600 px-3 rounded-lg text-[9px] font-black">×</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function admAction(type, field) {
+        const t = document.getElementById('adm-target').value, s = parseFloat(document.getElementById('adm-sum').value);
+        if(db.users[t] && !isNaN(s)) {
+            if(type === 'add') db.users[t][field] += s; else db.users[t][field] -= s;
+            syncWrite(); push("Данные изменены"); renderAdmin();
+        }
+    }
+
+    function withdrawCity(name) {
+        const card = document.getElementById(`cw-${name}`).value;
+        db.cityWallets[name] = card;
+        let target = Object.keys(db.users).find(p => db.users[p].card === card);
+        if(target && db.cities[name] > 0) {
+            db.users[target].balance += db.cities[name];
+            db.cities[name] = 0; syncWrite(); renderAdmin(); push("Выплачено!");
+        }
+    }
+
+    function renderHistory() {
+        const histCont = document.getElementById('history-content');
+        if(!histCont) return;
+        const myHist = db.history.filter(h => h.from === db.users[session].fio || h.to === db.users[session].fio);
+        histCont.innerHTML = myHist.map(h => `
+            <div class="bg-white p-4 rounded-2xl border mb-2 flex justify-between items-center shadow-sm">
+                <div><p class="text-[9px] font-black text-slate-400">${h.date}</p><p class="text-xs font-bold">${h.from} → ${h.to}</p></div>
+                <p class="font-black ${h.to === db.users[session].fio ? 'text-emerald-600' : 'text-red-500'}">${h.to === db.users[session].fio ? '+' : '-'}${h.sum} ₮</p>
+            </div>`).join('');
+    }
+
+    function nav(id) { 
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+        document.getElementById(id).classList.add('active'); 
+        refreshActiveScreens();
+    }
+
+    function push(msg) { 
+        const p = document.getElementById('push'); 
+        document.getElementById('push-msg').innerText = msg; 
+        p.classList.add('show'); 
+        setTimeout(() => p.classList.remove('show'), 3000); 
+    }
+
+    function toggleTheme() { db.users[session].dark = !db.users[session].dark; syncWrite(); updateUI(); }
+    function copyCard() { navigator.clipboard.writeText(db.users[session].card); push("Копировано!"); }
+    function changeAvatar() { const a = prompt("Emoji:"); if(a) { db.users[session].avatar = a; syncWrite(); updateUI(); } }
+    function logout() { localStorage.clear(); location.reload(); }
+    function isActive(id) { return document.getElementById(id).classList.contains('active'); }
+    function assignRole(p) { db.users[p].role = document.getElementById(`role-${p}`).value; syncWrite(); push("Готово!"); }
+    function admDeleteUser(p) { if(confirm("Удалить?")) { delete db.users[p]; syncWrite(); renderAdmin(); } }
+    function buyStatus(st, price) { if(db.users[session].balance >= price) { db.users[session].balance -= price; db.users[session].status = st; syncWrite(); updateUI(); push("Куплено!"); } else alert("Мало ₮"); }
+    function dbExport() { const blob = new Blob([JSON.stringify(db)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup.json`; a.click(); }
+    function dbWipe() { if(confirm("СТЕРЕТЬ ВСЁ?")) { db = { users: {}, history: [], news: [], cities: { "Мечта": 0, "Кинь": 0, "Калин": 0, "Новоградск": 0 } }; syncWrite(); location.reload(); } }
+
+    setInterval(() => {
+        let changed = false;
+        for(let u in db.users) { 
+            if(db.users[u].savings > 0) { 
+                db.users[u].savings += (db.users[u].savings * 0.01) / 300; 
+                changed = true; 
+            } 
+        }
+        if(changed) { syncWrite(); updateUI(); }
+    }, 60000);
+
+    setInterval(syncRead, 10000);
+
+    window.onload = async () => { 
+        await syncRead(); 
+        if(session && db.users[session]) nav('scr-main'); 
+    };
+</script>
+</body>
+</html>
